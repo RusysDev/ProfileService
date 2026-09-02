@@ -1,0 +1,115 @@
+﻿body {
+	font-family: sans-serif;
+	margin: 10px;
+	padding-bottom: 40px;
+}
+
+nav {
+	margin-bottom: 15px;
+	padding: 10px;
+	background: #f1f1f1;
+	border-radius: 4px;
+}
+
+	nav a {
+		margin-right: 15px;
+		text-decoration: none;
+		color: #0066cc;
+		font-weight: bold;
+	}
+
+.card {
+	border: 1px solid #ccc;
+	padding: 12px;
+	margin-bottom: 15px;
+	border-radius: 5px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.progress-bar-container {
+	background: #e0e0e0;
+	border-radius: 4px;
+	height: 24px;
+	width: 100%;
+	position: relative;
+	margin-top: 10px;
+	overflow: hidden;
+}
+
+.progress-bar {
+	height: 100%;
+	background: #4caf50;
+	width: 0%;
+	transition: width 0.3s ease;
+}
+
+	.progress-bar.exceeded {
+		background: #f44336;
+	}
+
+.progress-text {
+	position: absolute;
+	width: 100%;
+	text-align: center;
+	top: 3px;
+	font-weight: bold;
+	font-size: 12px;
+	color: #333;
+}
+
+.btn-group {
+	margin-top: 10px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+	.btn-group button {
+		padding: 8px 12px;
+		cursor: pointer;
+		min-width: 70px;
+		font-size: 14px;
+	}
+
+.btn-group button.incrBtn {
+	max-width: 50px;
+}
+input[type="number"],
+input[type="time"] {
+	font-size: 16px;
+	padding: 4px;
+}
+
+input[type="number"] {
+	width:50px;
+}
+
+.table-responsive {
+	width: 100%;
+	overflow-x: auto;
+	margin-bottom: 20px;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	min-width: 300px;
+}
+
+th, td {
+	padding: 8px;
+	text-align: left;
+}
+
+#saveBtn {
+	width: 100%;
+	padding: 12px;
+	font-weight: bold;
+	font-size: 16px;
+	background-color: #4CAF50;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+}

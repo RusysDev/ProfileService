@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Kampiūterio limitai</title>
+	<link rel="stylesheet" href="/admin/style.css" />
+</head>
+<body>
+	<nav>
+		<a href="/admin">Laikas</a>
+		<a href="/admin/limits" style="text-decoration:underline;">Limitai</a>
+	</nav>
+
+	<div id="schedules"></div>
+	<button id="saveBtn">Saugoti</button>
+
+	<script>
+		let globalData = {};
+
+		fetch('/admin/config')
+			.then(response => response.json())
+			.then(data => {
+				globalData = data;
+				const container = document.getElementById('schedules');
+
+				for (const [username, weeklySchedule] of Object.entries(data)) {
+					let section = `<h3>${username}</h3>
+								<div class="table-responsive">
+								<table border="1" cellpadding="5">
+								<tr><th></th><th>Nuo</th><th>Iki</th><th>Laikas (min)</th></tr>`;
+
+					for (const [day, schedule] of Object.entries(weeklySchedule)) {
+						const startTime = schedule.start ? schedule.start.substring(0, 5) : '';
+						const endTime = schedule.end ? schedule.end.substring(0, 5) : '';
+						const dayDisplay = day.charAt(0).toUpperCase() + day.slice(1);
+
+						section += `<tr>
+									<td><strong>${dayDisplay}</strong></td>
+									<td><input type="time" value="${startTime}" data-user="${username}" data-day="${day}" data-field="start"></td>
+									<td><input type="time" value="${endTime}" data-user="${username}" data-day="${day}" data-field="end"></td>
+									<td><input type="number" value="${schedule.time}" data-user="${username}" data-day="${day}" data-field="time"></td>
+								</tr>`;
+					}
+
+					section += `</table></div>`;
+					container.innerHTML += section;
+				}
+			});
+
+		document.getElementById('saveBtn').addEventListener('click', () => {
+			document.querySelectorAll('#schedules input').forEach(input => {
+				const user = input.dataset.user;
+				const day = input.dataset.day;
+				const field = input.dataset.field;
+				let val = input.value;
+
+				if ((field === 'start' || field === 'end') && val && val.length === 5) {
+					val += ':00';
+				} else if (field === 'time') {
+					val = parseInt(val) || 0;
+				}
+
+				globalData[user][day][field] = val;
+			});
+
+			fetch('/admin/config', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(globalData)
+			})
+				.then(response => {
+					if (response.ok) {
+						alert('Saved!');
+					} else {
+						alert('Failed to save configuration.');
+					}
+				})
+				.catch(err => alert('Error: ' + err));
+		});
+	</script>
+</body>
+</html>

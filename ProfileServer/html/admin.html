@@ -1,0 +1,120 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Kampiūterio limitai</title>
+	<link rel="stylesheet" href="/admin/style.css" />
+</head>
+<body>
+	<nav>
+        <a href="/admin" style="text-decoration:underline;">Laikas</a>
+		<a href="/admin/limits">Limitai</a>
+	</nav>
+	<div id="sessions">Kraunama...</div>
+
+	<script>
+    function loadSessions() {
+        fetch('/admin/session')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('sessions');
+                container.innerHTML = '';
+
+                for (const [username, session] of Object.entries(data)) {
+                    const isLocked = session.locked ? "🔒" : "🔓";
+
+                    const limitMin = Math.round(session.limit / 60);
+                    const remainMin = Math.round(session.remain / 60);
+                    const usedMin = limitMin - remainMin;
+
+                    const percentage = limitMin > 0 ? Math.min(Math.max((usedMin / limitMin) * 100, 0), 100) : 0;
+                    const isExceeded = session.remain < 0;
+
+                    const startTime = session.start ? session.start.substring(0, 5) : '';
+                    const endTime = session.end ? session.end.substring(0, 5) : '';
+
+                    let card = `<div class="card" data-user="${username}">
+                        <h3>${isLocked} ${username}</h3>
+                        <p><strong>Limitas:</strong> <input type="number" id="limit-${username}" value="${limitMin}" style="width: 70px;" /> min</p>
+                        <p><strong>Liko:</strong> <span id="remain-${username}">${remainMin}</span> min</p>
+                        <div class="btn-group">
+                            <button class="incrBtn" onclick="adjustLimit('${username}', 5)">+5</button>
+                            <button class="incrBtn" onclick="adjustLimit('${username}', 10)">+10</button>
+                            <button class="incrBtn" onclick="adjustLimit('${username}', 30)">+30</button>
+                            <button onclick="saveLimits('${username}')" style="background-color: #4CAF50; color: white; border: none; border-radius: 4px;">Išsaugoti</button>
+                            <button onclick="lockUser('${username}')" style="background-color: #f44336; color: white; border: none; border-radius: 4px; ${session.locked?'display:none;':''}">Užrakinti</button>
+                            <span style="flex:1;"></span>
+                        </div>
+                        <p style="margin-top: 15px;"><strong>Laikas:</strong><br>
+                            <input type="time" id="start-${username}" value="${startTime}" /> -
+                            <input type="time" id="end-${username}" value="${endTime}" />
+                            (${session.time} min)
+                        </p>
+                        <div class="progress-bar-container" style="margin-top: 15px;">
+                            <div class="progress-bar ${isExceeded||session.locked ? 'exceeded' : ''}" style="width: ${percentage}%"></div>
+                            <div class="progress-text">${usedMin} / ${limitMin} min</div>
+                        </div>
+                    </div>`;
+
+                    container.innerHTML += card;
+                }
+            })
+            .catch(err => {
+                document.getElementById('sessions').innerText = 'Nepavyko užkrauti sesijos duomenų.';
+            });
+    }
+
+    function adjustLimit(username, minutes) {
+        const input = document.getElementById(`limit-${username}`);
+        let current = parseInt(input.value) || 0;
+        input.value = current + minutes;
+    }
+
+    function saveLimits(username) {
+        const limitMin = parseInt(document.getElementById(`limit-${username}`).value) || 0;
+        const start = document.getElementById(`start-${username}`).value;
+        const end = document.getElementById(`end-${username}`).value;
+
+        const payload = {
+            time: limitMin,
+            start: start ? start + ":00" : null,
+            end: end ? end + ":00" : null
+        };
+
+        sendLimits(username, payload);
+    }
+
+    function lockUser(username) {
+        const start = document.getElementById(`start-${username}`).value;
+        const end = document.getElementById(`end-${username}`).value;
+
+        const payload = {
+            time: 0,
+            start: start ? start + ":00" : null,
+            end: end ? end + ":00" : null
+        };
+
+        sendLimits(username, payload);
+    }
+
+    function sendLimits(username, payload) {
+        fetch(`/admin/limits/${username}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => {
+            if (res.ok) {
+                loadSessions();
+            } else {
+                alert('Klaida išsaugant.');
+            }
+        })
+        .catch(err => alert('Klaida: ' + err));
+    }
+
+    loadSessions();
+	</script>
+</body>
+</html>
