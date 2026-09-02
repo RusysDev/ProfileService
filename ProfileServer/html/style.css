@@ -25,6 +25,7 @@ nav {
 	border-radius: 5px;
 	width: 100%;
 	box-sizing: border-box;
+	max-width: 600px;
 }
 
 .progress-bar-container {
@@ -72,9 +73,10 @@ nav {
 		font-size: 14px;
 	}
 
-.btn-group button.incrBtn {
-	max-width: 50px;
-}
+		.btn-group button.incrBtn {
+			max-width: 50px;
+		}
+
 input[type="number"],
 input[type="time"] {
 	font-size: 16px;
@@ -82,7 +84,11 @@ input[type="time"] {
 }
 
 input[type="number"] {
-	width:50px;
+	width: 50px;
+}
+
+input[type="time"] {
+	width: 95px;
 }
 
 .table-responsive {
