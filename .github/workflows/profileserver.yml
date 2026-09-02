@@ -27,7 +27,7 @@ jobs:
       run: dotnet build ProfileServer/ProfileServer.csproj --configuration Release -r linux-arm64 --no-restore
 
     - name: Publish for Linux ARM64
-      run: dotnet publish ProfileServer/ProfileServer.csproj --configuration Release --runtime linux-arm64 --self-contained false --output ./publish-output --no-build
+      run: dotnet publish ProfileServer/ProfileServer.csproj --configuration Release --runtime linux-arm64 --self-contained false --output ./publish-output /p:PublishSingleFile=true /p:PublishTrimmed=true --no-build
 
     - name: Create Release Archive
       run: |
