@@ -21,10 +21,10 @@ jobs:
         dotnet-version: '8.0.x'
 
     - name: Restore dependencies
-      run: dotnet restore ProfileServer/ProfileServer.csproj
+      run: dotnet restore ProfileServer/ProfileServer.csproj -r linux-arm64
 
     - name: Build
-      run: dotnet build ProfileServer/ProfileServer.csproj --configuration Release --no-restore
+      run: dotnet build ProfileServer/ProfileServer.csproj --configuration Release -r linux-arm64 --no-restore
 
     - name: Publish for Linux ARM64
       run: dotnet publish ProfileServer/ProfileServer.csproj --configuration Release --runtime linux-arm64 --self-contained false --output ./publish-output --no-build
