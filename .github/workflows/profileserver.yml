@@ -1,0 +1,41 @@
+name: ProfileServer - Build and Package .NET for Debian ARM64
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ProfileServer/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore ProfileServer/ProfileServer.csproj
+
+    - name: Build
+      run: dotnet build ProfileServer/ProfileServer.csproj --configuration Release --no-restore
+
+    - name: Publish for Linux ARM64
+      run: dotnet publish ProfileServer/ProfileServer.csproj --configuration Release --runtime linux-arm64 --self-contained false --output ./publish-output --no-build
+
+    - name: Create Release Archive
+      run: |
+        cd ./publish-output
+        tar -czvf ../profileserver-linux-arm64.tar.gz *
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: profileserver-linux-arm64
+        path: profileserver-linux-arm64.tar.gz
