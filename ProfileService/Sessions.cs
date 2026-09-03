@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
+using System.IO.Pipes;
 using System.Runtime.InteropServices;
-using static ProfileService.SessionManager;
-using static ProfileService.SessionUser;
 
+using ProfileService;
 
 namespace ProfileService;
 
@@ -16,9 +16,9 @@ public class SessionUser {
 	public void Logoff() { Process.Start(new ProcessStartInfo("logoff", Id.ToString()) { CreateNoWindow = true }); }
 	public void Lock() { Process.Start(new ProcessStartInfo("tsdiscon", Id.ToString()) { CreateNoWindow = true }); }
 
-	public void Msg(string title, string text) => SendMessageToUser(Id, title, text);
+	public void Msg(string title, string text, int type = 0) => SessionManager.SendToast(Name ?? "", title, text, type);
 
-	public void Disable(bool @lock = true) => DisableUser(Name ?? "null", @lock);
+	public void Disable(bool @lock = true) => SessionManager.DisableUser(Name ?? "null", @lock);
 	public enum UserState { Other, Active, Disconnected, Idle }
 
 }
@@ -29,8 +29,6 @@ public static class SessionManager {
 	[DllImport("wtsapi32.dll", SetLastError = true)] private static extern bool WTSEnumerateSessions(IntPtr hServer, int Reserved, int Version, ref IntPtr ppSessionInfo, ref int pCount);
 	[DllImport("wtsapi32.dll")] private static extern void WTSFreeMemory(IntPtr pMemory);
 	[DllImport("wtsapi32.dll", SetLastError = true)] private static extern bool WTSQuerySessionInformation(IntPtr hServer, int SessionId, int WTSInfoClass, out IntPtr ppBuffer, out int pBytesReturned);
-	[DllImport("wtsapi32.dll", SetLastError = true)] private static extern bool WTSSendMessage(IntPtr hServer, int SessionId, string pTitle, uint TitleLength, string pMessage, uint MessageLength, uint Style, uint Timeout, out uint pResponse, bool bWait);
-	[DllImport("wtsapi32.dll", SetLastError = true)] private static extern bool WTSLogOffSession(IntPtr hServer, int SessionId, bool bWait);
 
 	private const int WTS_CURRENT_SERVER_HANDLE = 0;
 	private const int WTSUserName = 5;
@@ -52,22 +50,13 @@ public static class SessionManager {
 	}
 
 
-	public static bool SendMessageToUser(int sessionId, string title, string message) {
-		return WTSSendMessage(
-			WTS_CURRENT_SERVER_HANDLE,
-			sessionId,
-			title, (uint)((title.Length + 1) * 2),
-			message, (uint)((message.Length + 1) * 2),
-			0, 0, out _, false);
-	}
-
 
 	private static Dictionary<string, bool> DisabledUsers { get; set; } = [];
-	public static void DisableUser(string username, bool @lock = true) {
+	public static void DisableUser(string username, bool @lock = true, bool silent = false) {
 		var du = DisabledUsers.TryGetValue(username, out var lk);
 		if (!string.IsNullOrEmpty(username) && (!du || lk != @lock)) {
-			if (du) ProfileWorkerService.Notify($"Vartotojas {(@lock ? "užrakintas" : "atrakintas")}", $"Vartotojas: {username}", 0);
-			
+			if (du && !silent) SendToast(username, $"Vartotojas {(@lock ? "užrakintas" : "atrakintas")}", $"Vartotojas: {username}", 0);
+
 			DisabledUsers[username] = @lock;
 			var disablePsi = new ProcessStartInfo("net", $"user {username} /active:{(@lock ? "no" : "yes")}") {
 				CreateNoWindow = true, UseShellExecute = false, Verb = "runas"
@@ -76,11 +65,11 @@ public static class SessionManager {
 		}
 	}
 
-	private static UserState MapState(WTS_CONNECT_STATE_CLASS state) => state switch {
-		WTS_CONNECT_STATE_CLASS.WTSActive => UserState.Active,
-		WTS_CONNECT_STATE_CLASS.WTSDisconnected => UserState.Disconnected,
-		WTS_CONNECT_STATE_CLASS.WTSIdle => UserState.Idle,
-		_ => UserState.Other
+	private static SessionUser.UserState MapState(WTS_CONNECT_STATE_CLASS state) => state switch {
+		WTS_CONNECT_STATE_CLASS.WTSActive => SessionUser.UserState.Active,
+		WTS_CONNECT_STATE_CLASS.WTSDisconnected => SessionUser.UserState.Disconnected,
+		WTS_CONNECT_STATE_CLASS.WTSIdle => SessionUser.UserState.Idle,
+		_ => SessionUser.UserState.Other
 	};
 
 	public static SessionUser? GetActive() => GetAllSessions(true).FirstOrDefault();
@@ -106,17 +95,35 @@ public static class SessionManager {
 		return ret;
 	}
 
+	[StructLayout(LayoutKind.Sequential)] private struct WTSINFOEX { public uint Level; public uint Reserved; public WTSINFOEX_LEVEL Data; }
+	[StructLayout(LayoutKind.Sequential)] private struct WTSINFOEX_LEVEL { public WTSINFOEX_LEVEL1 WTSInfoExLevel1; }
+	[StructLayout(LayoutKind.Sequential)] private struct WTSINFOEX_LEVEL1 { public uint SessionId; public uint SessionState; public int SessionFlags; }
 
 	private static bool IsSessionLocked(int sessionId) {
 		if (WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE, sessionId, WTSSessionInfoEx, out IntPtr buffer, out int bytes)) {
 			try {
-				if (bytes >= 32) {
-					uint sessionFlags = (uint)Marshal.ReadInt32(buffer, 8);
-					return sessionFlags == WTS_SESSIONSTATE_LOCK;
+				if (bytes >= Marshal.SizeOf<WTSINFOEX>()) {
+					var info = Marshal.PtrToStructure<WTSINFOEX>(buffer);
+					if (info.Level == 1) {
+						return info.Data.WTSInfoExLevel1.SessionFlags == WTS_SESSIONSTATE_LOCK;
+					}
 				}
 			}
 			finally { WTSFreeMemory(buffer); }
 		}
 		return false;
 	}
+
+
+	public static void SendToast(string username, string title, string message, int prio) {
+		try {
+			using var client = new NamedPipeClientStream(".", $"ToastPipe_{username}", PipeDirection.Out);
+			client.Connect(1000);
+			using var writer = new StreamWriter(client);
+			writer.Write($"{title}|{message}|{prio}");
+		}
+		catch { }
+	}
+
+
 }

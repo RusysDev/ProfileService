@@ -76,6 +76,7 @@ public class ClientConfig {
 }
 
 public class UserConfig {
+	public string? Title { get; set; }
 	public Day Mon { get; set; } = new();
 	public Day Tue { get; set; } = new();
 	public Day Wed { get; set; } = new();

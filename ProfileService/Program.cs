@@ -3,8 +3,8 @@ using ProfileService;
 
 Directory.SetCurrentDirectory(AppContext.BaseDirectory);
 
-
 var cfg = Config.Data;
+
 var usr = SessionManager.GetActive();
 
 if (!string.IsNullOrEmpty(usr?.Name)) {
@@ -16,6 +16,14 @@ if (!string.IsNullOrEmpty(usr?.Name)) {
 	Console.WriteLine("No logged in users found.");
 }
 
+
+if (args.Length > 0 && args[0] == "users") {
+	Console.WriteLine("\nActive users:");
+	foreach (var i in SessionManager.GetAllSessions()) {
+		Console.WriteLine($"\t{i.Id}: {i.Name} / {i.State} / {i.Station}");
+	}
+	return;
+}
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddWindowsService(); // Required for Windows Service control signals

@@ -1,5 +1,7 @@
 ﻿
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 namespace ProfileService;
 
@@ -38,6 +40,7 @@ public class ProfileWorkerService : BackgroundService {
 
 		if (!string.IsNullOrEmpty(onl?.Name)) {
 			if (!Cfg.Users.ContainsKey(onl.Name) && !Cfg.IgnoreUsers.Contains(onl.Name)) {
+				onl.Msg("Nežinomas vartotojas", $"{onl.Name} sesija išjungiama.", 1);
 				Thread.Sleep(Cfg.LogoutDelay * 1000); onl.Logoff();
 			}
 		}
@@ -57,17 +60,15 @@ public class ProfileWorkerService : BackgroundService {
 				usr.Locked = true; save = true;  //Downtime - Unlock
 			}
 
-			SessionManager.DisableUser(login, usr.Locked ?? false);
 
-			if (onl?.Id > 0) {
+			if (login == onl?.Name && !onl.Locked) {
 				var diff = (int)(now - Diff).TotalSeconds;
 				usr.Remain -= diff;
 				sess = new Tick() { Time = diff, User = login }.Send();
-				if (usr.Incr > 0) Notify("Pridėta laiko", $"{(int)(usr.Incr / 60)} minutės.", 1);
+				if (usr.Incr > 0) onl.Msg("Pridėta laiko", $"{(int)(usr.Incr / 60)} minutės.", 0);
 				save = true;
 				if (!sess.TryGetValue(login, out var tmp) || (tmp.Locked ?? true)) {
-					Notify("Laikas baigėsi", $"Sistema atsijungs po {Cfg.LockDelay} sekundžių.", 1);
-					//onl.Msg("Time limit.", $"Daily time limit has been reached.\nYou will be logged out in {Cfg.LockDelay} seconds.");
+					onl.Msg("Laikas baigėsi", $"Sistema atsijungs po {Cfg.LockDelay} sekundžių.", 1);
 					Thread.Sleep(Cfg.LockDelay * 1000);
 					sess = Sessions.Get();
 					if (!sess.TryGetValue(login, out tmp) || (tmp.Locked ?? true)) {
@@ -76,22 +77,15 @@ public class ProfileWorkerService : BackgroundService {
 					}
 				}
 			}
+			else SessionManager.DisableUser(login, usr.Locked ?? false);
 		}
 		Diff = now;
 		if (save) sess.Save();
 	}
 
 
-
-	public static readonly string _toastPath = @"C:\ProgramData\LaikoLimitas\Laiko Limitas.exe";
-	public static void Notify(string title, string msg, int type = 0) {
-		var psi = new ProcessStartInfo { FileName = _toastPath, UseShellExecute = false };
-		psi.ArgumentList.Add(title);
-		psi.ArgumentList.Add(msg);
-		psi.ArgumentList.Add(type.ToString());
-		try { Process.Start(psi); }
-		catch (Exception) { }
-	}
-
 }
+
+
+
 
