@@ -25,22 +25,17 @@
 				const container = document.getElementById('schedules');
 
 				for (const [username, weeklySchedule] of Object.entries(data)) {
-					let section = `<h3>${username}</h3>
-								<div class="table-responsive">
-								<table border="1" cellpadding="5">
-								<tr><th></th><th>Nuo</th><th>Iki</th><th>Laikas (min)</th></tr>`;
+					let section = `<h3>${username}</h3><div class="table-responsive"><table border="1" cellpadding="5"><tr><th></th><th>Nuo</th><th>Iki</th><th>Laikas (min)</th></tr>`;
 
 					for (const [day, schedule] of Object.entries(weeklySchedule)) {
 						const startTime = schedule.start ? schedule.start.substring(0, 5) : '';
 						const endTime = schedule.end ? schedule.end.substring(0, 5) : '';
 						const dayDisplay = day.charAt(0).toUpperCase() + day.slice(1);
 
-						section += `<tr>
-									<td><strong>${dayDisplay}</strong></td>
-									<td><input type="time" value="${startTime}" data-user="${username}" data-day="${day}" data-field="start"></td>
-									<td><input type="time" value="${endTime}" data-user="${username}" data-day="${day}" data-field="end"></td>
-									<td><input type="number" value="${schedule.time}" data-user="${username}" data-day="${day}" data-field="time"></td>
-								</tr>`;
+						section += `<tr><td><strong>${dayDisplay}</strong></td>
+													<td><input type="time" value="${startTime}" data-user="${username}" data-day="${day}" data-field="start"></td>
+													<td><input type="time" value="${endTime}" data-user="${username}" data-day="${day}" data-field="end"></td>
+													<td><input type="number" value="${schedule.time}" data-user="${username}" data-day="${day}" data-field="time"></td></tr>`;
 					}
 
 					section += `</table></div>`;

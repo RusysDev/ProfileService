@@ -34,7 +34,17 @@ public static class Extensions {
 				// Malformed base64 or encoding issues
 			}
 		}
-		httpContext.Response.Headers["WWW-Authenticate"] = "Basic";
+		httpContext.Response.Headers.WWWAuthenticate = "Basic";
 		return Results.Unauthorized();
 	});
+
+
+	public static IResult GetFile(string fileName) {
+		var filePath = Path.Combine(AppContext.BaseDirectory, "html", fileName);
+		if (!File.Exists(filePath)) return Results.NotFound();
+		var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+		if (!provider.TryGetContentType(fileName, out var contentType)) contentType = "application/octet-stream";
+		var content = File.ReadAllText(filePath);
+		return Results.Content(content, contentType);
+	}
 }

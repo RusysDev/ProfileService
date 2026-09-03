@@ -31,11 +31,14 @@ nav {
 .progress-bar-container {
 	background: #e0e0e0;
 	border-radius: 4px;
-	height: 24px;
+	height: 30px;
 	width: 100%;
 	position: relative;
-	margin-top: 10px;
+	margin-top: 15px;
 	overflow: hidden;
+	border: 1px solid gray;
+	padding: 2px;
+	box-sizing: border-box;
 }
 
 .progress-bar {
@@ -43,6 +46,7 @@ nav {
 	background: #4caf50;
 	width: 0%;
 	transition: width 0.3s ease;
+	border-radius: 3px;
 }
 
 	.progress-bar.exceeded {
@@ -57,6 +61,7 @@ nav {
 	font-weight: bold;
 	font-size: 12px;
 	color: #333;
+	line-height: 25px;
 }
 
 .btn-group {
@@ -118,4 +123,24 @@ th, td {
 	border: none;
 	border-radius: 4px;
 	cursor: pointer;
+}
+
+
+
+.btn-green {
+	background-color: #4CAF50;
+	color: white;
+	border: none;
+	border-radius: 4px;
+}
+
+.btn-red {
+	background-color: #f44336;
+	color: white;
+	border: none;
+	border-radius: 4px;
+}
+
+.card h3 {
+	margin-top: 0px;
 }

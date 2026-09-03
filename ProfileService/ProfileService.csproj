@@ -17,6 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Shared\Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="install.ps1">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
