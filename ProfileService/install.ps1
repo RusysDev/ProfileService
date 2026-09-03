@@ -10,9 +10,17 @@ $sourcePath = Join-Path $PSScriptRoot $exeName
 $destPath = Join-Path $destDir $exeName
 $serviceName = "WinProfService"
 
-Write-Host "[1/6] Checking installation directory..." -ForegroundColor Cyan
+$laikoDestDir = "C:\ProgramData\LaikoLimitas"
+$laikoExeName = "Laiko Limitas.exe"
+$laikoSourcePath = Join-Path $PSScriptRoot $laikoExeName
+$laikoDestPath = Join-Path $laikoDestDir $laikoExeName
+
+Write-Host "[1/6] Checking installation directories..." -ForegroundColor Cyan
 if (-not (Test-Path $destDir)) {
     New-Item -ItemType Directory -Path $destDir -Force -ErrorAction Stop | Out-Null
+}
+if (-not (Test-Path $laikoDestDir)) {
+    New-Item -ItemType Directory -Path $laikoDestDir -Force -ErrorAction Stop | Out-Null
 }
 
 Write-Host "[2/6] Stopping existing service if running..." -ForegroundColor Cyan
@@ -23,6 +31,12 @@ if (Test-Path $sourcePath) {
     Copy-Item -Path $sourcePath -Destination $destPath -Force -ErrorAction Stop
 } else {
     throw "Source file '$sourcePath' not found next to script."
+}
+
+if (Test-Path $laikoSourcePath) {
+    Copy-Item -Path $laikoSourcePath -Destination $laikoDestPath -Force -ErrorAction Stop
+} else {
+    throw "Source file '$laikoSourcePath' not found next to script."
 }
 
 Write-Host "[4/6] Registering or updating Windows Service..." -ForegroundColor Cyan

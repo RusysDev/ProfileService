@@ -3,6 +3,7 @@ using ProfileService;
 
 Directory.SetCurrentDirectory(AppContext.BaseDirectory);
 
+
 var cfg = Config.Data;
 var usr = SessionManager.GetActive();
 
@@ -22,3 +23,7 @@ builder.Services.AddHostedService<ProfileWorkerService>();
 
 var host = builder.Build();
 host.Run();
+
+
+
+

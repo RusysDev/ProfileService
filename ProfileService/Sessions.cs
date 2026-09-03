@@ -64,7 +64,10 @@ public static class SessionManager {
 
 	private static Dictionary<string, bool> DisabledUsers { get; set; } = [];
 	public static void DisableUser(string username, bool @lock = true) {
-		if (!string.IsNullOrEmpty(username) && (!DisabledUsers.TryGetValue(username, out var lk) || lk != @lock)) {
+		var du = DisabledUsers.TryGetValue(username, out var lk);
+		if (!string.IsNullOrEmpty(username) && (!du || lk != @lock)) {
+			if (du) ProfileWorkerService.Notify($"Vartotojas {(@lock ? "užrakintas" : "atrakintas")}", $"Vartotojas: {username}", 0);
+			
 			DisabledUsers[username] = @lock;
 			var disablePsi = new ProcessStartInfo("net", $"user {username} /active:{(@lock ? "no" : "yes")}") {
 				CreateNoWindow = true, UseShellExecute = false, Verb = "runas"

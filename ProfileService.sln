@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProfileServer", "ProfileSer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{99ED1EEA-D152-457C-9620-D3C17A1E8F16}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Toast", "Toast\Toast.csproj", "{C3C00392-5632-4DBD-B0B8-0E462E8E5859}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{99ED1EEA-D152-457C-9620-D3C17A1E8F16}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99ED1EEA-D152-457C-9620-D3C17A1E8F16}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99ED1EEA-D152-457C-9620-D3C17A1E8F16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3C00392-5632-4DBD-B0B8-0E462E8E5859}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3C00392-5632-4DBD-B0B8-0E462E8E5859}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3C00392-5632-4DBD-B0B8-0E462E8E5859}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3C00392-5632-4DBD-B0B8-0E462E8E5859}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

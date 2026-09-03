@@ -16,12 +16,13 @@ public class Daily : Day {
 	public bool? Locked { get; set; }
 	public int Limit { get; set; }
 	public int Remain { get; set; }
+	public int? Incr { get; set; }
 	public Daily() { }
 	public Daily(Day day) { Time = day.Time; Remain = Limit = day.Time * 60; Start = day.Start; End = day.End; }
 
 	public void SetLimit(Day day) {
-		var sec = day.Time * 60; var incr = sec - Limit;
-		Limit = sec; Remain += incr; Start = day.Start; End = day.End;
+		var sec = day.Time * 60; Incr = sec - Limit;
+		Limit = sec; Remain += Incr.Value; Start = day.Start; End = day.End;
 
 		var m = TimeOnly.FromDateTime(DateTime.Now);
 		if (m >= Start && m <= End) {
