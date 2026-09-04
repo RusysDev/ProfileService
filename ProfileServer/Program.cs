@@ -38,15 +38,19 @@ app.MapPost("/admin/config", (Dictionary<string, UserConfig> users) => {
 
 app.MapPost("/admin/limits/{user}", (string user, Day limits) => {
 	var ret = Sessions.Get();
-	if (ret.TryGetValue(user, out var dt)) {
-		dt.SetLimit(limits); ret.Save();
-	}
+	if (ret.TryGetValue(user, out var dt)) { dt.SetLimit(limits); ret.Save(); }
 	return ret;
 }).RequireBasicAuth();
 
+app.MapPost("/admin/message/{user}", (string user, ToastMessage msg) => {
+	var ret = Sessions.Get();
+	if (ret.TryGetValue(user, out var dt)) { dt.Message = msg; ret.Save(); }
+	return ret;
+}).RequireBasicAuth();
 
 app.MapGet("/admin", () => Extensions.GetFile("admin.html")).RequireBasicAuth();
 app.MapGet("/admin/limits", () => Extensions.GetFile("limits.html")).RequireBasicAuth();
+app.MapGet("/admin/message", () => Extensions.GetFile("message.html")).RequireBasicAuth();
 app.MapGet("/admin/style.css", () => Extensions.GetFile("style.css"));
 
 app.Run();

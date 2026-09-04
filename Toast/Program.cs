@@ -1,19 +1,26 @@
-﻿using System.IO.Pipes;
-using Microsoft.Toolkit.Uwp.Notifications;
+﻿using ProfileService;
+using System.IO.Pipes;
+using System.Reflection;
+using System.Text.Json;
+
 
 string username = Environment.UserName;
-string pipeName = $"ToastPipe_{username.ToLower()}";
+string pipeName = $"local\\ToastPipe_{username.ToLower()}";
+
+Console.WriteLine(pipeName);
+
+var assembly = Assembly.GetExecutingAssembly();
+string title = assembly.GetCustomAttribute<AssemblyTitleAttribute>()?.Title?? "Laiko Limitas";
+string aumid = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product?? "RusysDev.LaikoLimitas.0.3";
+
+var toast = new Toast.ToastService(title, aumid);
 
 while (true) {
 	using var server = new NamedPipeServerStream(pipeName, PipeDirection.In);
 	await server.WaitForConnectionAsync();
-
-	using var reader = new StreamReader(server);
-	string payload = await reader.ReadToEndAsync();
-
-	var parts = payload.Split(['|'], 3);
-	if (parts.Length == 3) {
-		var type = (ToastScenario)(int.TryParse(parts[2], out var tp) ? tp : 0);
-		new ToastContentBuilder().AddText(parts[0]).SetToastScenario(type).AddAttributionText(parts[1]).Show();
+	try {
+		var msg = await JsonSerializer.DeserializeAsync<ToastMessage>(server);
+		if (msg is not null) toast.Show(msg);
 	}
+	catch { }
 }

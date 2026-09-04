@@ -24,7 +24,7 @@ public static class Sessions {
 	public static SessionUsers Tick(Tick tick) {
 		var ret = Get();
 		if (tick.User is not null && ret.TryGetValue(tick.User, out var dt)) {
-			dt.Remain -= tick.Time; dt.Incr = null;
+			dt.Remain -= tick.Time; dt.Incr = null; dt.Message = null;
 			if (dt.Remain <= 0) dt.Locked = true;
 			ret.Save();
 		}

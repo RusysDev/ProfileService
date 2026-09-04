@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
-
+using System.Text.Json;
 using ProfileService;
 
 namespace ProfileService;
@@ -16,7 +16,7 @@ public class SessionUser {
 	public void Logoff() { Process.Start(new ProcessStartInfo("logoff", Id.ToString()) { CreateNoWindow = true }); }
 	public void Lock() { Process.Start(new ProcessStartInfo("tsdiscon", Id.ToString()) { CreateNoWindow = true }); }
 
-	public void Msg(string title, string text, int type = 0) => SessionManager.SendToast(Name ?? "", title, text, type);
+	public void Msg(string title, string text, ToastIcon? icon) => new ToastMessage() { Title = title, Message = text, Icon = icon }.Send(Name ?? "");
 
 	public void Disable(bool @lock = true) => SessionManager.DisableUser(Name ?? "null", @lock);
 	public enum UserState { Other, Active, Disconnected, Idle }
@@ -55,7 +55,9 @@ public static class SessionManager {
 	public static void DisableUser(string username, bool @lock = true, bool silent = false) {
 		var du = DisabledUsers.TryGetValue(username, out var lk);
 		if (!string.IsNullOrEmpty(username) && (!du || lk != @lock)) {
-			if (du && !silent) SendToast(username, $"Vartotojas {(@lock ? "užrakintas" : "atrakintas")}", $"Vartotojas: {username}", 0);
+			if (du && !silent) {
+				new ToastMessage() { Icon = @lock ? ToastIcon.Lock : ToastIcon.Unlock, Title = $"Vartotojas {(@lock ? "užrakintas" : "atrakintas")}", Priority = true }.Send(username);
+			}
 
 			DisabledUsers[username] = @lock;
 			var disablePsi = new ProcessStartInfo("net", $"user {username} /active:{(@lock ? "no" : "yes")}") {
@@ -88,7 +90,7 @@ public static class SessionManager {
 			if (unlocked && (si.State != WTS_CONNECT_STATE_CLASS.WTSActive || locked)) { continue; } //Ignore inactive;
 			if (WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE, si.SessionId, WTSUserName, out IntPtr buffer, out int bytes) && bytes > 1) {
 				string username = Marshal.PtrToStringAnsi(buffer) ?? string.Empty;
-				ret.Add(new SessionUser() { Id = si.SessionId, Name = username, State = MapState(si.State), Station = si.pWinStationName, Locked = locked });
+				ret.Add(new SessionUser() { Id = si.SessionId, Name = username.ToLower(), State = MapState(si.State), Station = si.pWinStationName, Locked = locked });
 			}
 		}
 		WTSFreeMemory(ppSessionInfo);
@@ -115,15 +117,17 @@ public static class SessionManager {
 	}
 
 
-	public static void SendToast(string username, string title, string message, int prio) {
+
+
+
+
+
+	public static void Send(this ToastMessage msg, string username) {
 		try {
-			using var client = new NamedPipeClientStream(".", $"ToastPipe_{username}", PipeDirection.Out);
-			client.Connect(1000);
-			using var writer = new StreamWriter(client);
-			writer.Write($"{title}|{message}|{prio}");
+			using var client = new NamedPipeClientStream(".", $"local\\ToastPipe_{username}", PipeDirection.Out);
+			client.Connect(5000);
+			JsonSerializer.Serialize(client, msg);
 		}
 		catch { }
 	}
-
-
 }

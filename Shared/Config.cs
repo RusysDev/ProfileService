@@ -5,6 +5,25 @@ using System.Text.Json;
 namespace ProfileService;
 
 
+
+
+
+
+public class Test {
+	//Get config
+	//Get sessions
+
+
+	//Tick - add session info
+
+	//Messages
+}
+
+
+
+
+
+
 public class Tick {
 	public string? User { get; set; }
 	public int Time { get; set; }
@@ -17,20 +36,16 @@ public class Daily : Day {
 	public int Limit { get; set; }
 	public int Remain { get; set; }
 	public int? Incr { get; set; }
+	public ToastMessage? Message { get; set; }
 	public Daily() { }
 	public Daily(Day day) { Time = day.Time; Remain = Limit = day.Time * 60; Start = day.Start; End = day.End; }
 
 	public void SetLimit(Day day) {
 		var sec = day.Time * 60; Incr = sec - Limit;
 		Limit = sec; Remain += Incr.Value; Start = day.Start; End = day.End;
-
 		var m = TimeOnly.FromDateTime(DateTime.Now);
 		if (m >= Start && m <= End) {
-			if (Remain < 1) {
-				Locked = true;
-				Limit += -Remain;
-				Remain = 0;
-			}
+			if (Remain < 1) { Locked = true; Limit += -Remain; Remain = 0; }
 			else Locked = false;
 		}
 		else { Locked = true; }

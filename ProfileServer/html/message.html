@@ -1,0 +1,105 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Siųsti pranešimą</title>
+    <link rel="stylesheet" href="/admin/style.css" />
+</head>
+<body>
+    <nav>
+        <a href="/admin">Laikas</a>
+        <a href="/admin/limits">Limitai</a>
+        <a href="/admin/message" style="text-decoration:underline;">Pranešimai</a>
+    </nav>
+
+    <div style="max-width: 500px; margin: 20px auto;">
+        <h2>Siųsti pranešimą vartotojui</h2>
+        <form id="messageForm">
+            <div style="margin-bottom: 10px;">
+                <label for="userSelect">Vartotojas:</label><br>
+                <select id="userSelect" required style="width: 100%; padding: 5px;">
+                    <option value="">-- Pasirinkite vartotoją --</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label for="titleInput">Pavadinimas:</label><br>
+                <input type="text" id="titleInput" required style="width: 100%; padding: 5px;" />
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label for="messageInput">Pranešimas:</label><br>
+                <textarea id="messageInput" required rows="4" style="width: 100%; padding: 5px;"></textarea>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label for="iconSelect">Piktograma (Icon):</label><br>
+                <select id="iconSelect" style="width: 100%; padding: 5px;">
+                    <option value="">-- Nėra --</option>
+                    <option value="0">Info</option>
+                    <option value="1">TimeRem</option>
+                    <option value="2">TimeAdd</option>
+                    <option value="3">Lock</option>
+                    <option value="4">Unlock</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label><input type="checkbox" id="silentCheck" />Tylus</label>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label><input type="checkbox" id="priorityCheck" />Prioritetinis</label>
+            </div>
+
+            <button type="submit" id="sendBtn">Siųsti</button>
+        </form>
+    </div>
+
+    <script>
+        fetch('/admin/config')
+            .then(response => response.json())
+            .then(data => {
+                const userSelect = document.getElementById('userSelect');
+                for (const username of Object.keys(data)) {
+                    const option = document.createElement('option');
+                    option.value = username;
+                    option.textContent = username;
+                    userSelect.appendChild(option);
+                }
+            });
+
+        document.getElementById('messageForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('userSelect').value;
+            if (!username) return;
+
+            const iconVal = document.getElementById('iconSelect').value;
+
+            const payload = {
+                Title: document.getElementById('titleInput').value,
+                Message: document.getElementById('messageInput').value,
+                Icon: iconVal === "" ? null : parseInt(iconVal, 10),
+                Silent: document.getElementById('silentCheck').checked,
+                Priority: document.getElementById('priorityCheck').checked
+            };
+
+            fetch(`/admin/message/${encodeURIComponent(username)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Pranešimas išsiųstas!');
+                        document.getElementById('messageForm').reset();
+                    } else {
+                        alert('Nepavyko išsiųsti pranešimo.');
+                    }
+                })
+                .catch(err => alert('Klaida: ' + err));
+        });
+    </script>
+</body>
+</html>

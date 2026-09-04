@@ -9,21 +9,16 @@ public class ProfileWorkerService : BackgroundService {
 
 	private static ClientConfig Cfg => Config.Data;
 
-
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
 		Directory.CreateDirectory(".\\log\\");
 
 		while (!stoppingToken.IsCancellationRequested) {
-			try {
-				ProcessActiveTime();
-			}
-			catch {
-				// Suppress background errors
-			}
-
+			try { ProcessActiveTime(); }
+			catch { }
 			await Task.Delay(TimeSpan.FromSeconds(Cfg.WorkerWait), stoppingToken);
 		}
 	}
+
 
 	private static DateTime Diff { get; set; } = DateTime.Now;
 	private static DateTime ReloadConfig { get; set; }
@@ -40,7 +35,7 @@ public class ProfileWorkerService : BackgroundService {
 
 		if (!string.IsNullOrEmpty(onl?.Name)) {
 			if (!Cfg.Users.ContainsKey(onl.Name) && !Cfg.IgnoreUsers.Contains(onl.Name)) {
-				onl.Msg("Nežinomas vartotojas", $"{onl.Name} sesija išjungiama.", 1);
+				onl.Msg("Nežinomas vartotojas", $"{onl.Name} sesija išjungiama.", ToastIcon.Info);
 				Thread.Sleep(Cfg.LogoutDelay * 1000); onl.Logoff();
 			}
 		}
@@ -65,16 +60,19 @@ public class ProfileWorkerService : BackgroundService {
 				var diff = (int)(now - Diff).TotalSeconds;
 				usr.Remain -= diff;
 				sess = new Tick() { Time = diff, User = login }.Send();
-				if (usr.Incr > 0) onl.Msg("Pridėta laiko", $"{(int)(usr.Incr / 60)} minutės.", 0);
+
+				usr.Message?.Send(login);
+				//				if (usr.Incr > 0) onl.Msg("Pridėta laiko", $"{(int)(usr.Incr / 60)} minutės.", ToastIcon.TimeAdd);
+
 				save = true;
-				if (!sess.TryGetValue(login, out var tmp) || (tmp.Locked ?? true)) {
-					onl.Msg("Laikas baigėsi", $"Sistema atsijungs po {Cfg.LockDelay} sekundžių.", 1);
-					Thread.Sleep(Cfg.LockDelay * 1000);
-					sess = Sessions.Get();
-					if (!sess.TryGetValue(login, out tmp) || (tmp.Locked ?? true)) {
-						onl.Disable();
-						onl.Lock();
+
+				if (sess.TryGetValue(login, out usr) ) {
+					if (!KillRunning) {
+						if ((usr.Locked ?? true) || usr.Remain < Cfg.LockDelay) {
+							KillStart(onl);
+						}
 					}
+					else if ((!usr.Locked ?? false) && usr.Remain < Cfg.LockDelay) { KillStop(); }
 				}
 			}
 			else SessionManager.DisableUser(login, usr.Locked ?? false);
@@ -83,6 +81,27 @@ public class ProfileWorkerService : BackgroundService {
 		if (save) sess.Save();
 	}
 
+
+	private static CancellationTokenSource? _cts;
+	public static bool KillRunning => _cts != null;
+	public static void KillStart(SessionUser user) {
+		_cts?.Cancel();
+		_cts = new CancellationTokenSource();
+		_ = Task.Run(async () => {
+			try {
+				user.Msg("Laikas baigėsi", $"Sistema atsijungs po {Cfg.LockDelay} sekundžių.", ToastIcon.TimeRem);
+				await Task.Delay(TimeSpan.FromSeconds(Cfg.LockDelay), _cts.Token);
+				var sess = Sessions.Get();
+				if (!sess.TryGetValue(user.Name ?? "", out var tmp) || (tmp.Locked ?? true)) {
+					user.Disable(); Thread.Sleep(1000); user.Lock();
+				}
+			}
+			catch (OperationCanceledException) { }
+			_cts = null;
+		}, _cts.Token);
+	}
+
+	public static void KillStop() { _cts?.Cancel(); }
 
 }
 

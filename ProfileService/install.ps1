@@ -11,7 +11,7 @@ $destPath = Join-Path $destDir $exeName
 $serviceName = "WinProfService"
 
 $laikoDestDir = "C:\ProgramData\LaikoLimitas"
-$laikoExeName = "Laiko Limitas.exe"
+$laikoExeName = "LaikoLimitas.exe"
 $laikoSourcePath = Join-Path $PSScriptRoot $laikoExeName
 $laikoDestPath = Join-Path $laikoDestDir $laikoExeName
 
@@ -25,7 +25,7 @@ if (-not (Test-Path $laikoDestDir)) {
 
 Write-Host "[2/6] Stopping existing service if running..." -ForegroundColor Cyan
 Stop-Service -Name $serviceName -ErrorAction SilentlyContinue
-Get-Process | Where-Object { $_.Path -eq $laikoDestPath } | Stop-Process -Force
+Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $laikoDestPath } | Stop-Process -Force -ErrorAction SilentlyContinue
 
 Write-Host "[3/6] Copying application files..." -ForegroundColor Cyan
 if (Test-Path $sourcePath) {
@@ -43,25 +43,31 @@ if (Test-Path $laikoSourcePath) {
 Write-Host "[4/6] Registering or updating Windows Service..." -ForegroundColor Cyan
 $existingService = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
 if ($existingService) {
-    sc.exe config $serviceName binPath= "`"$destPath`"" start= disabled displayname= "Windows Profile Service" | Out-Null
+    sc.exe config $serviceName binPath= "`"$destPath`"" start= disabled displayname= "Windows Profile Service" *> $null
 } else {
-    sc.exe create $serviceName binPath= "`"$destPath`"" start= disabled displayname= "Windows Profile Service" | Out-Null
+    sc.exe create $serviceName binPath= "`"$destPath`"" start= disabled displayname= "Windows Profile Service" *> $null
 }
 if ($LASTEXITCODE -ne 0) { throw "Failed to register Windows service." }
 
 $RegistryPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
-$ValueName = "UserToastAgent"
-Set-ItemProperty -Path $RegistryPath -Name $ValueName -Value $laikoDestPath -Force
-
-sc.exe description $serviceName "Monitors active user session profile quality service."
+$ApprovedPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
+$ValueName = "LaikoLimitasAgent"
+Set-ItemProperty -Path $RegistryPath -Name $ValueName -Value $laikoDestPath -Force | Out-Null
+if (Test-Path "$ApprovedPath") {
+    $enabledBinary = [byte[]](0x02, 0x00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    if (Get-ItemProperty -Path $ApprovedPath -Name $ValueName -ErrorAction SilentlyContinue) {
+        Set-ItemProperty -Path $ApprovedPath -Name $ValueName -Value $enabledBinary -Force | Out-Null
+    }
+}
+sc.exe description $serviceName "Monitors active user session profile quality service." *> $null
 
 Write-Host "[5/6] Service installed/updated successfully." -ForegroundColor Green
 
 $response = Read-Host "[6/6] Do you want to Enable and Start the service now? (y/N)"
 if ($response -eq 'y' -or $response -eq 'yes') {
     Write-Host "Enabling and starting service..." -ForegroundColor Cyan
-    sc.exe config $serviceName start= auto
-    sc.exe start $serviceName
+    sc.exe config $serviceName start= auto *> $null
+    sc.exe start $serviceName *> $null
     if ($LASTEXITCODE -ne 0) { throw "Failed to start Windows service." }
     Write-Host "Service enabled and started successfully." -ForegroundColor Green
 } else {
