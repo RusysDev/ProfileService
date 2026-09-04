@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Siųsti pranešimą</title>
+    <title>Kampiūterio limitai</title>
     <link rel="stylesheet" href="/admin/style.css" />
 </head>
 <body>
@@ -18,9 +18,10 @@
         <form id="messageForm">
             <div style="margin-bottom: 10px;">
                 <label for="userSelect">Vartotojas:</label><br>
-                <select id="userSelect" required style="width: 100%; padding: 5px;">
+                <select id="userSelect" style="width: 100%; padding: 5px; margin-bottom: 5px;">
                     <option value="">-- Pasirinkite vartotoją --</option>
                 </select>
+                <input type="text" id="userInputManual" placeholder="Arba įveskite vartotojo vardą rankiniu būdu" style="width: 100%; padding: 5px;" />
             </div>
 
             <div style="margin-bottom: 10px;">
@@ -34,12 +35,12 @@
             </div>
 
             <div style="margin-bottom: 10px;">
-                <label for="iconSelect">Piktograma (Icon):</label><br>
+                <label for="iconSelect">Piktograma:</label><br>
                 <select id="iconSelect" style="width: 100%; padding: 5px;">
                     <option value="">-- Nėra --</option>
                     <option value="0">Info</option>
-                    <option value="1">TimeRem</option>
-                    <option value="2">TimeAdd</option>
+                    <option value="1">Time-Rem</option>
+                    <option value="2">Time-Add</option>
                     <option value="3">Lock</option>
                     <option value="4">Unlock</option>
                 </select>
@@ -69,10 +70,17 @@
                 }
             });
 
+        // Sync dropdown selection into the manual input box if chosen
+        document.getElementById('userSelect').addEventListener('change', (e) => {
+            if (e.target.value) {
+                document.getElementById('userInputManual').value = e.target.value;
+            }
+        });
+
         document.getElementById('messageForm').addEventListener('submit', (e) => {
             e.preventDefault();
 
-            const username = document.getElementById('userSelect').value;
+            const username = document.getElementById('userInputManual').value.trim();
             if (!username) return;
 
             const iconVal = document.getElementById('iconSelect').value;
@@ -93,7 +101,7 @@
                 .then(response => {
                     if (response.ok) {
                         alert('Pranešimas išsiųstas!');
-                        document.getElementById('messageForm').reset();
+                        // Form reset omitted to keep values intact
                     } else {
                         alert('Nepavyko išsiųsti pranešimo.');
                     }
