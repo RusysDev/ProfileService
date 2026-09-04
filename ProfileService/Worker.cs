@@ -89,11 +89,16 @@ public class ProfileWorkerService : BackgroundService {
 		_cts = new CancellationTokenSource();
 		_ = Task.Run(async () => {
 			try {
-				user.Msg("Laikas baigėsi", $"Sistema atsijungs po {Cfg.LockDelay} sekundžių.", ToastIcon.TimeRem);
-				await Task.Delay(TimeSpan.FromSeconds(Cfg.LockDelay), _cts.Token);
+				var dly = Cfg.LockDelay > 5 ? Cfg.LockDelay : 5;
+
+				for (int i = dly; i > 10; i -= 10) {
+					user.Msg("Laikas baigėsi", $"Sistema atsijungs po {i} sekundžių.", ToastIcon.TimeRem, true)					;
+					await Task.Delay(TimeSpan.FromSeconds(10), _cts.Token);
+				}
+
 				var sess = Sessions.Get();
 				if (!sess.TryGetValue(user.Name ?? "", out var tmp) || (tmp.Locked ?? true)) {
-					user.Disable(); Thread.Sleep(1000); user.Lock();
+					user.Disable(); await Task.Delay(TimeSpan.FromSeconds(5), _cts.Token); user.Lock();
 				}
 			}
 			catch (OperationCanceledException) { }

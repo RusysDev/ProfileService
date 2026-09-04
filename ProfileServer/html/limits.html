@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>Kampiūterio limitai</title>
+	<title>Kompiuterio limitai</title>
 	<link rel="stylesheet" href="/admin/style.css" />
 </head>
 <body>
@@ -18,6 +18,7 @@
 
 	<script>
 		let globalData = {};
+		const validDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 		fetch('/admin/config')
 			.then(response => response.json())
@@ -25,27 +26,47 @@
 				globalData = data;
 				const container = document.getElementById('schedules');
 
-				for (const [username, weeklySchedule] of Object.entries(data)) {
-					let section = `<h3>${username}</h3><div class="table-responsive"><table border="1" cellpadding="5"><tr><th></th><th>Nuo</th><th>Iki</th><th>Laikas (min)</th></tr>`;
+				for (const [username, configObj] of Object.entries(data)) {
+					let section = `<h3>${username}</h3>`;
+					let generalInputs = '';
+					let tableRows = '';
 
-					for (const [day, schedule] of Object.entries(weeklySchedule)) {
-						const startTime = schedule.start ? schedule.start.substring(0, 5) : '';
-						const endTime = schedule.end ? schedule.end.substring(0, 5) : '';
-						const dayDisplay = day.charAt(0).toUpperCase() + day.slice(1);
+					for (const [key, val] of Object.entries(configObj)) {
+						if (validDays.includes(key) && typeof val === 'object' && val !== null) {
+							const startTime = val.start ? val.start.substring(0, 5) : '';
+							const endTime = val.end ? val.end.substring(0, 5) : '';
+							const dayDisplay = key.charAt(0).toUpperCase() + key.slice(1);
 
-						section += `<tr><td><strong>${dayDisplay}</strong></td>
-													<td><input type="time" value="${startTime}" data-user="${username}" data-day="${day}" data-field="start"></td>
-													<td><input type="time" value="${endTime}" data-user="${username}" data-day="${day}" data-field="end"></td>
-													<td><input type="number" value="${schedule.time}" data-user="${username}" data-day="${day}" data-field="time"></td></tr>`;
+							tableRows += `<tr><td><strong>${dayDisplay}</strong></td>
+											  <td><input type="time" value="${startTime}" data-user="${username}" data-day="${key}" data-field="start"></td>
+											  <td><input type="time" value="${endTime}" data-user="${username}" data-day="${key}" data-field="end"></td>
+											  <td><input type="number" value="${val.time ?? ''}" data-user="${username}" data-day="${key}" data-field="time"></td></tr>`;
+						} else {
+							generalInputs += `<div style="margin-bottom: 8px; max-width: 400px;">
+													<label><strong>${key}:</strong></label><br>
+													<input type="text" value="${val ?? ''}" data-user="${username}" data-prop="${key}" style="width: 100%; padding: 4px;">
+												  </div>`;
+						}
 					}
 
-					section += `</table></div>`;
-					container.innerHTML += section;
+					section += generalInputs;
+
+					if (tableRows) {
+						section += `<div class="table-responsive"><table border="1" cellpadding="5"><tr><th></th><th>Nuo</th><th>Iki</th><th>Laikas (min)</th></tr>${tableRows}</table></div>`;
+					}
+
+					container.innerHTML += section + '<hr style="margin: 20px 0;">';
 				}
 			});
 
 		document.getElementById('saveBtn').addEventListener('click', () => {
-			document.querySelectorAll('#schedules input').forEach(input => {
+			document.querySelectorAll('#schedules input[data-prop]').forEach(input => {
+				const user = input.dataset.user;
+				const prop = input.dataset.prop;
+				globalData[user][prop] = input.value;
+			});
+
+			document.querySelectorAll('#schedules input[data-field]').forEach(input => {
 				const user = input.dataset.user;
 				const day = input.dataset.day;
 				const field = input.dataset.field;

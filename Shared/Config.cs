@@ -38,7 +38,11 @@ public class Daily : Day {
 	public int? Incr { get; set; }
 	public ToastMessage? Message { get; set; }
 	public Daily() { }
-	public Daily(Day day) { Time = day.Time; Remain = Limit = day.Time * 60; Start = day.Start; End = day.End; }
+	public Daily(Day day) {
+		Time = day.Time; Remain = Limit = day.Time * 60; Start = day.Start; End = day.End;
+		var m = TimeOnly.FromDateTime(DateTime.Now);
+		Locked = m >= Start && m <= End && Remain > 0;
+	}
 
 	public void SetLimit(Day day) {
 		var sec = day.Time * 60; Incr = sec - Limit;

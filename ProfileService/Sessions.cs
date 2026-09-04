@@ -16,7 +16,7 @@ public class SessionUser {
 	public void Logoff() { Process.Start(new ProcessStartInfo("logoff", Id.ToString()) { CreateNoWindow = true }); }
 	public void Lock() { Process.Start(new ProcessStartInfo("tsdiscon", Id.ToString()) { CreateNoWindow = true }); }
 
-	public void Msg(string title, string text, ToastIcon? icon) => new ToastMessage() { Title = title, Message = text, Icon = icon }.Send(Name ?? "");
+	public void Msg(string title, string text, ToastIcon? icon=null,bool prio=false) => new ToastMessage() { Title = title, Message = text, Icon = icon, Priority=prio }.Send(Name ?? "");
 
 	public void Disable(bool @lock = true) => SessionManager.DisableUser(Name ?? "null", @lock);
 	public enum UserState { Other, Active, Disconnected, Idle }
