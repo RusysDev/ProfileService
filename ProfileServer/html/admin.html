@@ -36,27 +36,27 @@
 						const endTime = session.end ? session.end.substring(0, 5) : '';
 
 						let card = `<div class="card" data-user="${username}">
-								<h3>${isLocked} ${username}</h3>
-								<p><strong>Limitas:</strong> <input type="number" id="limit-${username}" value="${limitMin}" style="width: 70px;" /> min</p>
-								<p><strong>Liko:</strong> <span id="remain-${username}">${remainMin}</span> min</p>
-								<div class="btn-group">
-									<button class="incrBtn" onclick="adjustLimit('${username}', 5)">+5</button>
-									<button class="incrBtn" onclick="adjustLimit('${username}', 10)">+10</button>
-									<button class="incrBtn" onclick="adjustLimit('${username}', 30)">+30</button>
-									<button onclick="saveLimits('${username}')" class="btn-green" >Išsaugoti</button>
-									<button onclick="lockUser('${username}')" class="btn-red" style="${session.locked ? 'display:none;' : ''}">Užrakinti</button>
-									<span style="flex:1;"></span>
-								</div>
-								<p style="margin-top: 15px;"><strong>Laikas:</strong><br>
-									<input type="time" id="start-${username}" value="${startTime}" /> -
-									<input type="time" id="end-${username}" value="${endTime}" />
-									(${session.time} min)
-								</p>
-								<div class="progress-bar-container"">
-									<div class="progress-bar ${isExceeded || session.locked ? 'exceeded' : ''}" style="width: ${percentage}%"></div>
-									<div class="progress-text">${usedMin} / ${limitMin} min</div>
-								</div>
-							</div>`;
+									<h3>${isLocked} ${username}</h3>
+									<p><strong>Limitas:</strong> <input type="number" id="limit-${username}" value="${limitMin}" data-initial="${limitMin}" oninput="checkChanges('${username}')" style="width: 70px;" /> min</p>
+									<p><strong>Liko:</strong> <span id="remain-${username}">${remainMin}</span> min</p>
+									<div class="btn-group">
+										<button class="incrBtn" onclick="adjustLimit('${username}', 5)">+5</button>
+										<button class="incrBtn" onclick="adjustLimit('${username}', 10)">+10</button>
+										<button class="incrBtn" onclick="adjustLimit('${username}', 30)">+30</button>
+										<button onclick="saveLimits('${username}')" class="btn-green" id="save-btn-${username}" style="display:none;">Išsaugoti</button>
+										<button onclick="lockUser('${username}')" class="btn-red" style="${session.locked ? 'display:none;' : ''}">Užrakinti</button>
+										<span style="flex:1;"></span>
+									</div>
+									<p style="margin-top: 15px;"><strong>Laikas:</strong><br>
+										<input type="time" id="start-${username}" value="${startTime}" data-initial="${startTime}" oninput="checkChanges('${username}')" /> -
+										<input type="time" id="end-${username}" value="${endTime}" data-initial="${endTime}" oninput="checkChanges('${username}')" />
+										(${session.time} min)
+									</p>
+									<div class="progress-bar-container">
+										<div class="progress-bar ${isExceeded || session.locked ? 'exceeded' : ''}" style="width: ${percentage}%"></div>
+										<div class="progress-text">${usedMin} / ${limitMin} min</div>
+									</div>
+								</div>`;
 
 						container.innerHTML += card;
 					}
@@ -70,6 +70,23 @@
 			const input = document.getElementById(`limit-${username}`);
 			let current = parseInt(input.value) || 0;
 			input.value = current + minutes;
+			checkChanges(username);
+		}
+
+		function checkChanges(username) {
+			const limitInput = document.getElementById(`limit-${username}`);
+			const startInput = document.getElementById(`start-${username}`);
+			const endInput = document.getElementById(`end-${username}`);
+			const saveBtn = document.getElementById(`save-btn-${username}`);
+
+			if (!limitInput || !startInput || !endInput || !saveBtn) return;
+
+			const hasChanged =
+				limitInput.value !== limitInput.dataset.initial ||
+				startInput.value !== startInput.dataset.initial ||
+				endInput.value !== endInput.dataset.initial;
+
+			saveBtn.style.display = hasChanged ? '' : 'none';
 		}
 
 		function saveLimits(username) {

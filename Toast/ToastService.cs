@@ -27,10 +27,12 @@ public class ToastService {
 		var audioXml = msg.Silent ? "<audio silent='true' />" : (!string.IsNullOrEmpty(msg.Sound) ? $"<audio src='ms-winsoundevent:Notification.{msg.Sound}' />" : null);
 
 		string prioritySnippet = msg.Priority ? "$toast.Priority = [Windows.UI.Notifications.ToastNotificationPriority]::High; " : "";
+		string scenarioSnippet = msg.Priority ? "$template.GetElementsByTagName('toast').Item(0).SetAttribute('scenario', 'alarm'); " : "";
 
 		PsExec(
 			"[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null; " +
 			"$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastImageAndText02); " +
+			scenarioSnippet +
 			(audioXml is null ? "" : (
 				$"$template.GetElementsByTagName('toast').Item(0).AppendChild($template.CreateElement('audio')) > $null; " +
 				(msg.Silent ? "$template.GetElementsByTagName('audio').Item(0).SetAttribute('silent', 'true'); " :

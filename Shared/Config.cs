@@ -93,6 +93,7 @@ public class ClientConfig {
 	public int WorkerWait { get; set; } = 10;
 	public int ConfigReload { get; set; } = 60;
 	public int LockDelay { get; set; } = 30;
+	public int LockUnlock { get; set; } = 60;
 	public int LogoutDelay { get; set; } = 15;
 	public Dictionary<string, UserConfig> Users { get; set; } = [];
 }

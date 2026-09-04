@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Xml.Linq;
 
 namespace ProfileService;
 
@@ -63,7 +64,7 @@ public class ProfileWorkerService : BackgroundService {
 				usr.Message?.Send(login);
 				save = true;
 
-				if (sess.TryGetValue(login, out usr) ) {
+				if (sess.TryGetValue(login, out usr)) {
 					if (!KillRunning) {
 						if ((usr.Locked ?? false) || usr.Remain < Cfg.LockDelay) {
 							KillStart(onl);
@@ -79,31 +80,67 @@ public class ProfileWorkerService : BackgroundService {
 	}
 
 
-	private static CancellationTokenSource? _cts;
-	public static bool KillRunning => _cts != null;
+	private static CancellationTokenSource? _killToken;
+	public static bool KillRunning => _killToken != null;
 	public static void KillStart(SessionUser user) {
-		_cts?.Cancel();
-		_cts = new CancellationTokenSource();
+		_killToken?.Cancel();		_killToken = new CancellationTokenSource();
 		_ = Task.Run(async () => {
 			try {
 				var dly = Cfg.LockDelay > 5 ? Cfg.LockDelay : 5;
-
 				for (int i = dly; i > 10; i -= 10) {
-					user.Msg("Laikas baigėsi", $"Sistema atsijungs po {i} sekundžių.", ToastIcon.TimeRem, true)					;
-					await Task.Delay(TimeSpan.FromSeconds(10), _cts.Token);
+					user.Msg("Laikas baigėsi", $"Sistema atsijungs po {i} sekundžių.", ToastIcon.TimeRem, true);
+					await Task.Delay(TimeSpan.FromSeconds(10), _killToken.Token);
+					if (KillExtended(user.Name ?? "")) { KillStop(); return; }
 				}
-
 				var sess = Sessions.Get();
 				if (!sess.TryGetValue(user.Name ?? "", out var tmp) || (tmp.Locked ?? true)) {
-					user.Disable(); await Task.Delay(TimeSpan.FromSeconds(5), _cts.Token); user.Lock();
+					user.Disable(); await Task.Delay(TimeSpan.FromSeconds(5), _killToken.Token); user.Lock();
 				}
 			}
 			catch (OperationCanceledException) { }
-			_cts = null;
-		}, _cts.Token);
+			_killToken = null;
+		}, _killToken.Token);
+	}
+	public static void KillStop() { _killToken?.Cancel(); _killToken = null; }
+	private static bool KillExtended(string user) {
+		var sess = Sessions.Get();
+		return sess.TryGetValue(user, out var tmp) && tmp.Remain > Cfg.LockDelay;
 	}
 
-	public static void KillStop() { _cts?.Cancel(); }
+
+	//private static CancellationTokenSource? _lockToken;
+	//public static bool LockedRunning => _lockToken != null;
+	//public static void LockStart(string user) {
+	//	SessionManager.DisableUser(user, false);
+	//	_lockToken?.Cancel(); _lockToken = new CancellationTokenSource();
+	//	_ = Task.Run(async () => {
+	//		try {
+	//			await Task.Delay(TimeSpan.FromSeconds(Cfg.LockDelay));
+	//			SessionManager.DisableUser(user, false);
+
+
+	//			var dly = Cfg.LockUnlock > 5 ? Cfg.LockUnlock : 5;
+
+	//			var sess = Sessions.Get();
+	//			if (!sess.TryGetValue(user.Name ?? "", out var tmp) || (tmp.Locked ?? true)) {
+	//				user.Disable(); await Task.Delay(TimeSpan.FromSeconds(5), _killToken.Token); user.Lock();
+	//			}
+	//		}
+	//		catch (OperationCanceledException) { }
+	//		_killToken = null;
+	//	}, _killToken.Token);
+	//}
+
+
+	//public static void LockStop() { _lockToken?.Cancel(); _lockToken = null;
+	//	SessionManager.DisableUser(user, false);
+	//}
+
+
+	//TODO: Worker to lock and auto unlock user after 30 seconds
+	//TODO: If user is locked, lock + lock + logoff
+
+
 
 }
 
