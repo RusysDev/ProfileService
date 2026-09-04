@@ -32,13 +32,24 @@
 						const percentage = limitMin > 0 ? Math.min(Math.max((usedMin / limitMin) * 100, 0), 100) : 0;
 						const isExceeded = session.remain < 0;
 
+						let remainDisplay;
+						if (session.remain < 0) {
+							remainDisplay = `${remainMin} min`;
+						} else if (session.remain < 300) {
+							const rMin = Math.floor(session.remain / 60);
+							const rSec = session.remain % 60;
+							remainDisplay = `${rMin} min ${rSec}s`;
+						} else {
+							remainDisplay = `${remainMin} min`;
+						}
+
 						const startTime = session.start ? session.start.substring(0, 5) : '';
 						const endTime = session.end ? session.end.substring(0, 5) : '';
 
 						let card = `<div class="card" data-user="${username}">
 									<h3>${isLocked} ${username}</h3>
 									<p><strong>Limitas:</strong> <input type="number" id="limit-${username}" value="${limitMin}" data-initial="${limitMin}" oninput="checkChanges('${username}')" style="width: 70px;" /> min</p>
-									<p><strong>Liko:</strong> <span id="remain-${username}">${remainMin}</span> min</p>
+									<p><strong>Liko:</strong> <span id="remain-${username}">${remainDisplay}</span></p>
 									<div class="btn-group">
 										<button class="incrBtn" onclick="adjustLimit('${username}', 5)">+5</button>
 										<button class="incrBtn" onclick="adjustLimit('${username}', 10)">+10</button>
