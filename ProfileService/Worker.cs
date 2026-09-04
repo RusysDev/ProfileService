@@ -60,15 +60,12 @@ public class ProfileWorkerService : BackgroundService {
 				var diff = (int)(now - Diff).TotalSeconds;
 				usr.Remain -= diff;
 				sess = new Tick() { Time = diff, User = login }.Send();
-
 				usr.Message?.Send(login);
-				//				if (usr.Incr > 0) onl.Msg("Pridėta laiko", $"{(int)(usr.Incr / 60)} minutės.", ToastIcon.TimeAdd);
-
 				save = true;
 
 				if (sess.TryGetValue(login, out usr) ) {
 					if (!KillRunning) {
-						if ((usr.Locked ?? true) || usr.Remain < Cfg.LockDelay) {
+						if ((usr.Locked ?? false) || usr.Remain < Cfg.LockDelay) {
 							KillStart(onl);
 						}
 					}
