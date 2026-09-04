@@ -43,6 +43,9 @@ public class Daily : Day {
 	public void SetLimit(Day day) {
 		var sec = day.Time * 60; Incr = sec - Limit;
 		Limit = sec; Remain += Incr.Value; Start = day.Start; End = day.End;
+
+		if (Incr > 0 && Remain > 0) { Message = new("Pridėta laiko", (int)(Incr / 60) + " minutės") { Icon = ToastIcon.TimeAdd }; }
+
 		var m = TimeOnly.FromDateTime(DateTime.Now);
 		if (m >= Start && m <= End) {
 			if (Remain < 1) { Locked = true; Limit += -Remain; Remain = 0; }
